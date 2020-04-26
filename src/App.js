@@ -5,14 +5,10 @@ import web3 from './web3';
 import lottery from './lottery';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-      this.state = {
-        manager: '',
-        players: []
-
-      };
-  }
+  state = {
+    manager : '',
+    players : []
+  };
 
   async componentDidMount() {
     const manager = await lottery.methods.manager().call();
