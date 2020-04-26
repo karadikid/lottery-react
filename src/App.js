@@ -10,14 +10,16 @@ class App extends Component {
     players : [],
     balance: '',
     value: '',
-    message: ''
+    message: '',
+    lastWinner: ''
   };
 
   async componentDidMount() {
     const manager = await lottery.methods.manager().call();
     const players = await lottery.methods.getPlayers().call();
     const balance = await new web3.eth.getBalance(lottery.options.address);
-    this.setState({ manager, players, balance });
+    const lastWinner = await lottery.methods.lastWinner().call();
+    this.setState({ manager, players, balance, lastWinner });
   }
 
 onSubmit = async (event) => {
@@ -28,11 +30,26 @@ onSubmit = async (event) => {
 
     await lottery.methods.enter().send({
       from: accounts[0],
-      value: web3.utils.toWei(this.state.value, 'ether')
+      value: web3.utils.toWei(this.state.value, 'ether'),
+      gas: '1000000'
     });
 
     this.setState({ message: 'You have been entered!'});
 } ;
+
+onClick = async (event) => {
+    event.preventDefault();
+    const accounts = await web3.eth.getAccounts();
+
+    this.setState({ message: 'Waiting for a winner...'});
+
+    await lottery.methods.pickWinner().send({
+      from: accounts[0],
+      gas: '1000000'
+    });
+    const lastWinner = await lottery.methods.lastWinner().call();
+    this.setState({ message: 'And the winner is', lastWinner});
+}
 
  render() {
 
@@ -42,6 +59,7 @@ onSubmit = async (event) => {
       <p>This contract is managed by {this.state.manager}</p>
       <p>There are currently {this.state.players.length} people entered.</p>
       <p>Competing to win {web3.utils.fromWei(this.state.balance, 'ether')} ether.</p>
+      <p>Current winner is {this.state.lastWinner}</p>
       <hr />
 
       <form onSubmit={this.onSubmit}>
@@ -57,7 +75,9 @@ onSubmit = async (event) => {
       </form>
       
       <hr />
-
+      <h4>Ready to pick a winner?</h4>
+       <button onClick={this.onClick}>Pick a winner!</button>
+      <hr />
       <h1>{this.state.message}</h1>
       </div>
     );
